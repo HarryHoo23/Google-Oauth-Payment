@@ -17,24 +17,25 @@ passport.deserializeUser((id, done) => {
 });
 
 passport.use(
-    new GoogleStrategy(
-        {
+    new GoogleStrategy({
             clientID: keys.googleClientID,
             clientSecret: keys.googleClientSecret,
-            callbackURL:'/auth/google/callback',
+            callbackURL: '/auth/google/callback',
             proxy: true
-        }, 
-        (accessToken, refreshToken, profile, done) => {
-            User.findOne({ googleId: profile.id }).then((existingUser) => {
-                if (existingUser) {
-                    //we already have the record with the given profile ID
-                    done(null, existingUser);
-                }else {
-                    //we create a new user now
-                    new User({ googleId: profile.id })
-                        .save()
-                        .then(user=> done(null, user));
-                }
-              });
-        })
+        },
+        async (accessToken, refreshToken, profile, done) => {
+            const existingUser = await User.findOne({ googleId: profile.id });
+            
+            if (existingUser) {
+                //we already have the record with the given profile ID
+                return done(null, existingUser);
+            } else {
+                //we create a new user now
+                const user = await new User({
+                        googleId: profile.id
+                    }).save();
+                done(null, user);
+            }
+        }
+    )
 );
